@@ -15,6 +15,7 @@ import {
   isFundingConfirmed,
   closeApplication, reopenApplication, setFundingRoute, daysInStage, isOverdue,
 } from '../../utils/admissionsPipeline'
+import { answeredSections } from '../../../supabase/functions/_shared/applicationAnswers'
 
 /*
   Admission Detail: the single application identified by the :id route param.
@@ -111,7 +112,9 @@ function escapeHtml(v) {
 
 // Build a self-contained, print-ready HTML document for one application.
 // Rendered into a new window and sent to the browser print dialog (Save as PDF).
-function buildApplicationHtml(app) {
+// The body is every answer on the raw row, in the public form's sections; the
+// same definition feeds the applicant's emailed copy, so the two always agree.
+function buildApplicationHtml(app, raw) {
   const statusLabel = stageLabel(app.stage)
   const depositLine = app.depositPaid
     ? `${fmt(app.depositAmount)} paid`
@@ -141,12 +144,13 @@ function buildApplicationHtml(app) {
       .meta { font-size: 12px; color: #55606f; margin-bottom: 4px; }
       .badges { margin: 10px 0 20px; font-size: 11px; }
       .badge { display: inline-block; padding: 3px 10px; border-radius: 12px; background: #eef3fb; color: #1A5FAD; font-weight: 700; margin-right: 6px; }
-      section { margin-bottom: 18px; break-inside: avoid; }
-      h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: #1A5FAD; border-bottom: 1.5px solid #e3e9f2; padding-bottom: 5px; margin: 0 0 8px; }
+      section { margin-bottom: 18px; }
+      tr { break-inside: avoid; }
+      h2 { break-after: avoid; font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: #1A5FAD; border-bottom: 1.5px solid #e3e9f2; padding-bottom: 5px; margin: 0 0 8px; }
       table { width: 100%; border-collapse: collapse; }
       td { padding: 4px 0; font-size: 12.5px; vertical-align: top; }
       td.k { color: #7a8699; width: 42%; }
-      td.v { color: #1f2733; font-weight: 600; }
+      td.v { color: #1f2733; font-weight: 600; white-space: pre-wrap; }
       footer { margin-top: 24px; padding-top: 10px; border-top: 1px solid #e3e9f2; font-size: 10px; color: #9aa4b2; display: flex; justify-content: space-between; }
       @media print { body { padding: 0; } @page { margin: 18mm; } }
     </style></head><body>
@@ -162,29 +166,8 @@ function buildApplicationHtml(app) {
       <span class="badge">Funding: ${escapeHtml(fundingLabel(app.fundingRoute))}</span>
       <span class="badge">Deposit: ${escapeHtml(depositLine)}</span>
     </div>
-    ${section('Clinical Summary', [
-      row('Substance', app.substance),
-      row('Duration', app.substanceDuration),
-      row('Frequency', app.frequency),
-      row('Route of use', app.route),
-      row('Mental health', app.mentalHealth),
-      row('Suicide risk', app.suicideRisk),
-      row('Exclusion screening', app.exclusionScreening),
-    ].join(''))}
-    ${section('Insight & Readiness', [
-      row('Stage of change', app.stageOfChange),
-      row('Motivation', app.motivation),
-      row('Voluntary', app.voluntary ? 'Yes' : 'No'),
-      row('Treatment goals', app.treatmentGoals),
-      row('12-week commitment', app.twelveWeekCommitment ? 'Confirmed' : 'Not confirmed'),
-    ].join(''))}
-    ${section('Support & Family', [
-      row('Family awareness', app.familyAwareness),
-      row('PFSP details', app.pfspDetails),
-      row('Household', app.household),
-      row('Enablers identified', app.enablers),
-      row('Aftercare housing', app.aftercareHousing),
-    ].join(''))}
+    ${answeredSections(raw || {}).map(([title, rows]) => section(title, rows.map(([k, v]) => row(k, v)).join(''))).join('')}
+    ${raw?.notes ? section('Admissions notes', row('Notes', raw.notes)) : ''}
     <footer><span>House of Refuge Rehabilitation Centre</span><span>Generated ${escapeHtml(generated)}</span></footer>
   </body></html>`
 }
@@ -338,7 +321,7 @@ export default function AdmissionDetail() {
       alert('Please allow pop-ups for this site to export the application as PDF.')
       return
     }
-    w.document.write(buildApplicationHtml(app))
+    w.document.write(buildApplicationHtml(app, raw))
     w.document.close()
     w.focus()
     // Give the new window a tick to lay out before invoking the print dialog.

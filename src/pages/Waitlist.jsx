@@ -305,6 +305,14 @@ export default function Waitlist() {
           severe_cognitive: form.severeCognitive || 'no',
           legal_detention: form.legalDetention || 'no',
           children_cohabitation: form.childrenCohabitation || 'no',
+          // Asked on the form with columns waiting for them, but never sent until now.
+          prev_treatment_details: form.prevTxDetails, previous_recovery_length: form.previousRecoveryLength,
+          primary_caregiver: form.primaryCaregiver, caregiver_phone: form.caregiverPhone,
+          caregiver_relationship: form.caregiverRelationship, support_group_access: form.supportGroupAccess,
+          financial_stability: form.financialStability, pfsp_relationship: form.pfspRelationship,
+          family_consent_given: form.familyConsentGiven, community_partner: form.communityPartner,
+          church_connection: form.churchConnection, nok_address: form.nokAddress,
+          referral_details: form.referralDetails,
           deposit_paid: false, ...pipeline,
         })
         submitError = error

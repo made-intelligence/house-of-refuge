@@ -11,6 +11,7 @@
 //                      the template underneath is already written.
 
 import { BRAND, detailRows, detailText, esc, shell } from './mailer.ts'
+import { answeredSections } from './applicationAnswers.ts'
 
 export interface Message { subject: string; html: string; text: string }
 export interface Built { staff?: Message; applicant?: { to: string; msg: Message } }
@@ -38,6 +39,26 @@ const signoff = `<p style="font-size:14px;line-height:1.6;color:#333;margin:18px
 <p style="font-size:14px;line-height:1.6;color:#333;margin:14px 0 0 0">Warm regards,<br/><strong>The Admissions Team</strong><br/><span style="color:#666;font-size:13px">House of Refuge</span></p>`
 
 const signoffText = `\nIf you have questions in the meantime, call us on ${BRAND.phone}.\n\nWarm regards,\nThe Admissions Team\nHouse of Refuge`
+
+const copyNotice = 'This is a copy of the answers you submitted, for your records. It contains private medical information, so please keep this email somewhere only you can see. If anything here is wrong, call us and we will correct it.'
+
+function applicationCopyHtml(r: Record<string, unknown>): string {
+  const sections = answeredSections(r)
+    .map(([title, rows]) => `<div style="font-size:13px;font-weight:700;color:${BRAND.blue};text-transform:uppercase;letter-spacing:.08em;margin:20px 0 8px 0">${title}</div>${detailRows(rows)}`)
+    .join('')
+  return `<div style="border-top:1px solid #e5e5e5;margin-top:26px;padding-top:20px">
+    <h2 style="font-family:Georgia,serif;font-size:18px;color:${BRAND.blue};margin:0 0 8px 0">Your application</h2>
+    <p style="font-size:13px;line-height:1.6;color:#666;margin:0">${copyNotice}</p>
+    ${sections}
+  </div>`
+}
+
+function applicationCopyText(r: Record<string, unknown>): string {
+  const sections = answeredSections(r)
+    .map(([title, rows]) => `${title.toUpperCase()}\n${detailText(rows)}`)
+    .join('\n\n')
+  return `YOUR APPLICATION\n${copyNotice}\n\n${sections}`
+}
 
 export interface EventDef {
   table: string
@@ -100,9 +121,10 @@ export const EVENTS: Record<string, EventDef> = {
                   </ol>
                 </div>
                 <p style="font-size:15px;line-height:1.6;color:#333">Please keep reference <strong>${ref}</strong> to hand when you speak to us. Nothing is committed at this stage, and there is no charge for the review.</p>
-                ${signoff}`,
+                ${signoff}
+                ${applicationCopyHtml(r)}`,
             }),
-            text: `Dear ${who},\n\nThank you for reaching out to House of Refuge. Your application has reached our admissions team and is now in review.\n\nWHAT HAPPENS NEXT\n1. A member of our admissions team reviews your submission.\n2. We call you to talk through suitability and answer your questions.\n3. If residential care is the right fit, we invite you to clinical assessment.\n\nPlease keep reference ${ref} to hand when you speak to us. Nothing is committed at this stage, and there is no charge for the review.\n${signoffText}`,
+            text: `Dear ${who},\n\nThank you for reaching out to House of Refuge. Your application has reached our admissions team and is now in review.\n\nWHAT HAPPENS NEXT\n1. A member of our admissions team reviews your submission.\n2. We call you to talk through suitability and answer your questions.\n3. If residential care is the right fit, we invite you to clinical assessment.\n\nPlease keep reference ${ref} to hand when you speak to us. Nothing is committed at this stage, and there is no charge for the review.\n${signoffText}\n\n${applicationCopyText(r)}`,
           },
         },
       }
