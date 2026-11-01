@@ -5,6 +5,7 @@ import { HelmetProvider } from 'react-helmet-async'
 import App from './App'
 import ErrorBoundary from './components/ErrorBoundary'
 import InstallPrompt from './components/InstallPrompt'
+import UpdatePrompt from './components/UpdatePrompt'
 import './styles/global.css'
 
 ReactDOM.createRoot(document.getElementById('root')).render(
@@ -14,6 +15,7 @@ ReactDOM.createRoot(document.getElementById('root')).render(
         <ErrorBoundary>
           <App />
           <InstallPrompt />
+          <UpdatePrompt />
         </ErrorBoundary>
       </BrowserRouter>
     </HelmetProvider>
